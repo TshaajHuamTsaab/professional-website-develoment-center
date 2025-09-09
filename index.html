@@ -90,11 +90,17 @@
     <div class="logo">
       <img src="https://i.postimg.cc/DwzYYTWD/logo.webp" alt="Logo">
     </div>
-    <h2>Login</h2>
-    <input type="email" id="loginEmail" placeholder="Email">
-    <input type="password" id="loginPassword" placeholder="Password">
-    <button class="btn btn-login" onclick="login()">登录</button>
-    <button class="btn btn-create" onclick="toggleCreate()">创建新用户</button>
+
+    <!-- Login Form -->
+    <div id="loginForm">
+      <h2>Login</h2>
+      <input type="email" id="loginEmail" placeholder="Email">
+      <input type="password" id="loginPassword" placeholder="Password">
+      <button class="btn btn-login" onclick="login()">登录</button>
+      <button class="btn btn-create" onclick="toggleCreate()">创建新用户</button>
+    </div>
+
+    <!-- Signup Form -->
     <div id="createForm">
       <h2>请填写信息</h2>
       <input type="text" id="signupName" placeholder="姓名">
@@ -109,6 +115,7 @@
       </select>
       <input type="tel" id="signupPhone" placeholder="电话号码">
       <button class="btn btn-create" onclick="confirmSignup()">确认注册</button>
+      <button class="btn btn-login" onclick="backToLogin()">返回登录</button>
     </div>
   </div>
 
@@ -134,8 +141,14 @@
 
     // Toggle signup form
     function toggleCreate() {
-      const form = document.getElementById("createForm");
-      form.style.display = form.style.display === "none" ? "block" : "none";
+      document.getElementById("loginForm").style.display = "none";
+      document.getElementById("createForm").style.display = "block";
+    }
+
+    // Back to login form
+    function backToLogin() {
+      document.getElementById("createForm").style.display = "none";
+      document.getElementById("loginForm").style.display = "block";
     }
 
     // Confirm before creating account
@@ -226,6 +239,3 @@
   </script>
 </body>
 </html>
-
-
-
