@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>现实版水页增强版</title>
+<style>
+html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;font-family:"Microsoft YaHei",sans-serif;}
+body{
+  background:url('https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExYzdwYXd1dGcxbHloc3UwYjM3a2lpdnVhbHA5bnJrNWVpenc5dmltMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/FUESbiqyQcJBcwFefb/giphy.gif') center/cover no-repeat fixed;
+  position:relative;
+}
+.overlay{position:absolute;inset:0;background:rgba(0,0,0,0.4);z-index:0;}
+#content{position:relative;z-index:1;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;color:white;padding:20px;}
+h1{font-size:3em;margin-bottom:20px;text-shadow:2px 2px 8px rgba(0,0,0,0.7);}
+.line{margin:10px 0;font-size:1.5em;text-shadow:1px 1px 4px rgba(0,0,0,0.7);}
+#pageNumber{margin-top:10px;font-size:1em;color:#ccc;}
+#controls{position:absolute;top:10px;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;z-index:2;}
+button{padding:8px 16px;font-weight:bold;font-size:1em;border:none;border-radius:8px;cursor:pointer;}
+#playBtn{background:green;color:white;}
+#stopBtn{background:red;color:white;}
+#stopBtn.paused{background:blue;}
+#increase,#decrease,#addPage,#addBook,#viewBook,#changeBg{background:#fff;color:#0b6fc2;}
+#bookList{position:absolute;bottom:10px;right:10px;display:flex;gap:8px;flex-wrap:wrap;z-index:2;}
+.bookIcon{width:50px;height:50px;object-fit:cover;border-radius:6px;cursor:pointer;border:2px solid white;}
+/* 弹窗表单 */
+#formOverlay{position:absolute;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.7);display:none;align-items:center;justify-content:center;z-index:3;}
+.formBox{background:#fff;padding:20px;border-radius:12px;min-width:300px;color:black;display:flex;flex-direction:column;gap:10px;}
+.formBox input, .formBox textarea{width:100%;padding:6px;font-size:1em;border-radius:4px;border:1px solid #ccc;}
+.formBox button{background:#0b6fc2;color:white;padding:8px;border:none;border-radius:6px;cursor:pointer;font-weight:bold;}
+/* 宇宙星星和雪 */
+#stars, #snow{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0;}
+.star{position:absolute;background:white;border-radius:50%;opacity:0.8;}
+.snowflake{position:absolute;color:white;font-size:1em;user-select:none;}
+</style>
+</head>
+<body>    
+<div class="overlay"></div>
+<div id="controls">
+  <button id="playBtn">Play</button>
+  <button id="stopBtn">Stop</button>
+  <button id="increase">A+</button>
+  <button id="decrease">A-</button>
+  <button id="addPage">添加页面</button>
+  <button id="addBook">添加书籍</button>
+  <button id="viewBook">查看书籍</button>
+  <button id="changeBg">切换背景</button>
+  <button id="logout-btn">注销</button>
+</div>
+
+<div id="content">
+  <h1 id="title"></h1>
+  <div id="lines"></div>
+  <div id="pageNumber"></div>
+</div>
+
+<!-- 去掉箭头导航 -->
+
+<div id="bookList"></div>
+
+<canvas id="stars"></canvas>
+<canvas id="snow"></canvas>
+
+<!-- 弹窗表单 -->
+<div id="formOverlay">
+  <div class="formBox" id="formBox">
+    <div id="formTitle"></div>
+    <input type="text" id="formInput1" placeholder="">
+    <input type="text" id="formInput2" placeholder="">
+    <input type="text" id="formInput3" placeholder="">
+    <textarea id="formTextarea" placeholder="" style="display:none;"></textarea>
+    <button id="formSubmit">提交</button>
+    <button id="formCancel">取消</button>
+  </div>
+</div>
+
+<script>
+// ---------- 页面与书籍数据 ----------
+let pages = [
+  {title:"社会处事",
+    lines:[
+      "在社会混，最值钱的不是钱，而是信用。",
+      "给人留台阶，就是给自己留后路。",
+      "圈子再大，不真诚也白搭。",
+      "碰到麻烦，先沉住气，不要乱说话。",
+      "人脉不是认识多少人，而是谁愿意帮你。"
+    ],
+    deletable:false
+  },
+  {
+    title:"为人处事",
+    lines:[
+      "会做人，比会做事更重要。",
+      "千万别贪小便宜，最后吃大亏的还是自己。",
+      "人前说一句，背后别添一句。",
+      "恩情要记心里，矛盾要放身后。",
+      "小事情能看出一个人的真面目。"
+    ],
+    deletable:false
+  },
+  {
+    title:"夫妻相处",
+    lines:[
+      "婚姻不是比谁厉害，而是一起过日子。",
+      "吵架别过夜，冷战最伤感情。",
+      "站在对方角度想想，有些火气就下去了。",
+      "夸一句，比骂十句更管用。",
+      "苦日子能一起熬，甜日子才稳得住。"
+    ],
+    deletable:false
+  },
+  {
+    title:"家庭和睦",
+    lines:[
+      "家里不是讲输赢的地方，是讲温暖的地方。",
+      "一家人多说一句谢谢，气氛就不一样。",
+      "家务不是谁的事，谁有空谁做。",
+      "进家门，先放下情绪再开口。",
+      "家里和气，走出去才有底气。"
+    ],
+    deletable:false
+  },
+  {
+    title:"教育孩子",
+    lines:[
+      "孩子学你怎么做，不听你怎么说。",
+      "先教做人，再教读书。",
+      "太顺的孩子，长大容易吃大亏。",
+      "要孩子懂付出，而不是只会要东西。",
+      "鼓励一句，顶得过打击十句。"
+    ],
+    deletable:false
+  },
+  {
+    title:"遵守家规",
+    lines:[
+      "家没规矩，再有钱也留不住。",
+      "规矩不是束缚，是底线。",
+      "长辈立规矩，晚辈守规矩，家才安稳。",
+      "规矩讲清楚，孩子才知道方向。",
+      "家里守规矩，出去才不会丢人。"
+    ],
+    deletable:false
+  },
+  {
+    title:"孝顺父母",
+    lines:[
+      "父母在，家就在。",
+      "孝顺不是以后，是现在。",
+      "常回家吃饭，比转账更暖心。",
+      "父母的唠叨，是最便宜的关心。",
+      "陪伴才是真孝顺，不是光给钱。"
+    ],
+    deletable:false
+  },
+  {
+    title:"邻里关系",
+    lines:[
+      "远亲不如近邻，抬头不见低头见。",
+      "打个招呼，能化解一半尴尬。",
+      "别贪邻居小便宜，迟早坏了关系。",
+      "借点小忙，将来自己也能少麻烦。",
+      "不搬弄是非，是最好的邻里修养。"
+    ],
+    deletable:false
+  },
+  {
+    title:"朋友交往",
+    lines:[
+      "真朋友，不是喝酒时陪你，而是有事时帮你。",
+      "患难见真心，顺境看热闹。",
+      "朋友之间，守信用最重要。",
+      "拿别人短处开玩笑，迟早散伙。",
+      "跟靠谱的人在一起，自己也会变靠谱。"
+    ],
+    deletable:false
+  },
+  {
+    title:"自我修养",
+    lines:[
+      "心态放平，日子才顺。",
+      "说话要有分寸，别口无遮拦。",
+      "能忍一时之气，就能少十年烦恼。",
+      "依赖谁，都不如靠自己。",
+      "每天反省一点，日子就进步一点。"
+    ],
+    deletable:false
+  },
+  {
+    title: "顶层人物常用的10大束缚语言（透明揭示版）",
+    lines: [
+      "1. “只要努力，就能成功”",
+      "2. “要忠诚，不要计较”",
+      "3. “为了大家好，你要牺牲”",
+      "4. “听话，机会就给你”",
+      "5. “钱不是最重要的”",
+      "6. “忍一忍就过去了”",
+      "7. “你们要团结”",
+      "8. “未来会更好”",
+      "9. “这是规矩，别问为什么”",
+      "10. “要知足，别贪心”"
+    ],
+    deletable: false
+  },
+  {
+    title: "1. “只要努力，就能成功”",
+    lines: [
+      "实质：",
+      " 把“社会不平等”转移成“个人不够努力”，掩盖阶层壁垒。",
+      "真相：",
+      " 资源、背景、人脉远比单纯努力更决定成败。",
+      "跨越：",
+      " 努力必须和选择赛道、资本资源结合，否则只是原地跑。"
+    ],
+    deletable: false
+  },
+  {
+    title: "2. “要忠诚，不要计较”",
+    lines: [
+      "实质：",
+      " 用“忠诚”掩盖不公，要求下层无条件付出。",
+      "真相：",
+      " 忠诚通常是单向的，少数人享受成果，多数人消耗生命。",
+      "跨越：",
+      " 在任何关系中，学会保护底线，不做被榨干的螺丝钉。"
+    ],
+    deletable: false
+  },
+  {
+    title: "3. “为了大家好，你要牺牲”",
+    lines: [
+      "实质：",
+      " 用“集体”做幌子，迫使个人牺牲，最终受益的却是少数人。",
+      "真相：",
+      " 所谓“大家”，往往是“上面的人”。",
+      "跨越：",
+      " 牺牲前先问清：利益分配是否透明？牺牲是否值得？"
+    ],
+    deletable: false
+  },
+  {
+    title: "4. “听话，机会就给你”",
+    lines: [
+      "实质：",
+      " 制造“机会稀缺”的幻觉，让人用顺从换未来。",
+      "真相：",
+      " 机会不是恩赐，而是交易。",
+      "跨越：",
+      " 靠实力主动创造机会，不做等待被选中的人。"
+    ],
+    deletable: false
+  },
+  {
+    title: "5. “钱不是最重要的”",
+    lines: [
+      "实质：",
+      " 劝说底层满足现状，好压低报酬。",
+      "真相：",
+      " 说这句话的人，早已坐拥财富。",
+      "跨越：",
+      " 金钱是生存的基础，要敢于争取属于自己的价值。"
+    ],
+    deletable: false
+  },
+  {
+    title: "6. “忍一忍就过去了”",
+    lines: [
+      "实质：",
+      " 培养“顺民”，让人习惯屈服，不敢反抗。",
+      "真相：",
+      " 忍一次，就会有第二次、第三次。",
+      "跨越：",
+      " 该忍就忍，但关键时刻要敢于拒绝和对抗。"
+    ],
+    deletable: false
+  },
+  {
+    title: "7. “你们要团结”",
+    lines: [
+      "实质：",
+      " 用团结的名义，让底层互相约束，却只为上层利益服务。",
+      "真相：",
+      " 所谓团结，常常是“让你们听话”。",
+      "跨越：",
+      " 真正的团结是基于共同利益，而不是被动服从。"
+    ],
+    deletable: false
+  },
+  {
+    title: "8. “未来会更好”",
+    lines: [
+      "实质：",
+      " 制造空头承诺，让人继续忍受现实。",
+      "真相：",
+      " 未来只是筹码，用来拖延你的反抗。",
+      "跨越：",
+      " 不依赖口头承诺，把握当下的主动权。"
+    ],
+    deletable: false
+  },
+  {
+    title: "9. “这是规矩，别问为什么”",
+    lines: [
+      "实质：",
+      " 以规矩压制质疑，让规则永远向权力倾斜。",
+      "真相：",
+      " 规则从来不是公平的，而是利益者写下的护城河。",
+      "跨越：",
+      " 理解规则背后的利益，学会运用规则，而不是盲从。"
+    ],
+    deletable: false
+  },
+  {
+    title: "10. “要知足，别贪心”",
+    lines: [
+      "实质：",
+      " 麻痹底层，让他们接受不公，不去争取。",
+      "真相：",
+      " 让你知足的人，永远不会知足。",
+      "跨越：",
+      " 知足是心态，追求更好是权利，两者不能混淆。"
+    ],
+    deletable: false
+  },
+  {
+    title: "总结",
+    lines: [
+      "顶层人物常用的“束缚语言”都有三个共性：",
+      "",
+      "把系统性不公变成个人问题（例如：努力/忍耐/知足）。",
+      "把服从包装成美德（例如：忠诚/牺牲/团结）。",
+      "用未来承诺掩盖现实剥夺（例如：机会/未来会更好）。"
+    ],
+    deletable: false
+  },
+  {
+    title: "跨越的关键",
+    lines: [
+      "识别语言背后的真实利益。",
+      "拥有自己的价值底线。",
+      "不靠“施舍”，靠自身实力和合作创造主动权。"
+    ],
+    deletable: false
+  },
+  {
+  title: "🔥 人性的傲慢与极端 · 十题",
+  lines: [
+    "1. 权力的傲慢",
+    "2. 财富的傲慢",
+    "3. 知识的傲慢",
+    "4. 道德的傲慢",
+    "5. 经验的傲慢",
+    "6. 地位的傲慢",
+    "7. 孤立的极端",
+    "8. 盲从的极端",
+    "9. 贪欲的极端",
+    "10. 否定的极端"
+  ],
+  deletable: false
+},
+{
+  title: "1. 权力的傲慢",
+  lines: [
+    "当人一旦掌握权力",
+    "就容易把规则看作自己的工具",
+    "而不是约束。"
+  ],
+  deletable: false
+},
+{
+  title: "2. 财富的傲慢",
+  lines: [
+    "有了钱的人",
+    "往往误以为一切都能用钱衡量",
+    "甚至包括人心。"
+  ],
+  deletable: false
+},
+{
+  title: "3. 知识的傲慢",
+  lines: [
+    "读书多的人常陷入",
+    "自以为聪明，",
+    "轻视那些沉默却深刻的智慧。"
+  ],
+  deletable: false
+},
+{
+  title: "4. 道德的傲慢",
+  lines: [
+    "最危险的不是恶人",
+    "而是自认为“绝对正确”的好人。"
+  ],
+  deletable: false
+},
+{
+  title: "5. 经验的傲慢",
+  lines: [
+    "老手常常轻视新手",
+    "却忘了世界随时在变。"
+  ],
+  deletable: false
+},
+{
+  title: "6. 地位的傲慢",
+  lines: [
+    "人在上位就容易把",
+    "“尊重”当成理所当然",
+    "而不是相互的。"
+  ],
+  deletable: false
+},
+{
+  title: "7. 孤立的极端",
+  lines: [
+    "有人选择彻底不信任任何人",
+    "以为冷漠能保护自己",
+    "结果只剩孤独。"
+  ],
+  deletable: false
+},
+{
+  title: "8. 盲从的极端",
+  lines: [
+    "有人为了归属感",
+    "放弃独立思考",
+    "变成群体的影子。"
+  ],
+  deletable: false
+},
+{
+  title: "9. 贪欲的极端",
+  lines: [
+    "欲望一旦失控",
+    "就会吞噬理性",
+    "让人失去分寸。"
+  ],
+  deletable: false
+},
+{
+  title: "10. 否定的极端",
+  lines: [
+    "有些人不是追求真理",
+    "而是沉迷于否定一切",
+    "最终失去方向。"
+  ],
+  deletable: false
+},
+{
+  title: "总结",
+  lines: [
+    "傲慢让人看不见别人",
+    "极端让人看不见自己。",
+    "",
+    "只有保持清醒",
+    "承认自己的局限",
+    "才能在人性陷阱里不迷失。"
+  ],
+  deletable: false
+},
+{
+  title: "🌱 人性的坚韧与智慧 · 十题",
+  lines: [
+    "逆境的坚韧",
+    "信念的坚韧",
+    "学习的坚韧",
+    "情感的坚韧",
+    "责任的坚韧",
+    "宽容的智慧",
+    "沉默的智慧",
+    "简单的智慧",
+    "平衡的智慧",
+    "自知的智慧"
+  ],
+  deletable: false
+},
+{
+  title: "逆境的坚韧",
+  lines: [
+    "真正的坚强",
+    "不是没有痛苦",
+    "而是带着伤口继续走。"
+  ],
+  deletable: false
+},
+{
+  title: "2. 信念的坚韧",
+  lines: [
+    "信念就像火种",
+    "再小",
+    "也能点亮黑暗中的路。"
+  ],
+  deletable: false
+},
+{
+  title: "3. 学习的坚韧",
+  lines: [
+    "不断学习的人",
+    "才不会被时间淘汰",
+    "而是随时更新自己。"
+  ],
+  deletable: false
+},
+{
+  title: "4. 情感的坚韧",
+  lines: [
+    "爱不是脆弱的依赖",
+    "而是风雨中依旧选择牵手。"
+  ],
+  deletable: false
+},
+{
+  title: "5. 责任的坚韧",
+  lines: [
+    "真正的担当",
+    "不是方便时的承诺",
+    "而是困难时的坚持。"
+  ],
+  deletable: false
+},
+{
+  title: "6. 宽容的智慧",
+  lines: [
+    "懂得原谅的人",
+    "比执着仇恨的人",
+    "更懂得珍惜自己。"
+  ],
+  deletable: false
+},
+{
+  title: "7. 沉默的智慧",
+  lines: [
+    "沉默不是软弱",
+    "而是明白并非所有争辩",
+    "都值得耗费精力。"
+  ],
+  deletable: false
+},
+{
+  title: "8. 简单的智慧",
+  lines: [
+    "复杂让人迷失",
+    "而简单",
+    "能让心灵保持清澈。"
+  ],
+  deletable: false
+},
+{
+  title: "9. 平衡的智慧",
+  lines: [
+    "真正的智慧",
+    "不是走极端",
+    "而是找到内心的平衡。"
+  ],
+  deletable: false
+},
+{
+  title: "10. 自知的智慧",
+  lines: [
+    "人最大的聪明",
+    "不是战胜别人",
+    "而是看清自己。"
+  ],
+  deletable: false
+},
+{
+  title: "总结",
+  lines: [
+    "坚韧让人不被击倒",
+    "智慧让人不被困住。",
+    "",
+    "只有坚韧与智慧并行",
+    "人生才能走得更远。"
+  ],
+  deletable: false
+}
+];
+
+  
+let books = [];
+let currentPage=0, fontSize=1.5, reading=false, lineIndex=0;
+
+const titleEl=document.getElementById("title");
+const linesEl=document.getElementById("lines");
+const pageNumberEl=document.getElementById("pageNumber");
+
+// 永久保存
+function saveData(){localStorage.setItem("customPages", JSON.stringify(pages));localStorage.setItem("customBooks", JSON.stringify(books));}
+function loadData(){
+  const savedPages = JSON.parse(localStorage.getItem("customPages"));
+  const savedBooks = JSON.parse(localStorage.getItem("customBooks"));
+  if(savedPages){ pages = savedPages; }
+  if(savedBooks){ books = savedBooks; renderBooks(); }
+}
+loadData();
+
+// 渲染
+function renderPage(){
+  titleEl.textContent = pages[currentPage].title;
+  linesEl.innerHTML = "";
+  pages[currentPage].lines.forEach(line => {
+    const div = document.createElement("div");
+    div.className = "line";
+    div.style.fontSize = fontSize + "em";
+    div.innerHTML = line.split("").map(c => `<span>${c}</span>`).join("");
+    linesEl.appendChild(div);
+  });
+  pageNumberEl.textContent = `第 ${currentPage+1} 页 / 共 ${pages.length} 页`;
+}
+renderPage();
+
+// 翻页函数
+function prevPage(){if(currentPage>0){currentPage--; renderPage(); stopReading();}}
+function nextPage(){if(currentPage<pages.length-1){currentPage++; renderPage(); stopReading();}}
+
+// 手指/鼠标滑动切换
+let startX=0, endX=0;
+document.addEventListener("touchstart",e=>{startX=e.touches[0].clientX;});
+document.addEventListener("touchend",e=>{
+  endX=e.changedTouches[0].clientX;
+  if(startX-endX>50){ nextPage(); } // 向左滑 → 下一页
+  else if(endX-startX>50){ prevPage(); } // 向右滑 → 上一页
+});
+// 鼠标拖动也能翻页
+let mouseDown=false;
+document.addEventListener("mousedown",e=>{mouseDown=true; startX=e.clientX;});
+document.addEventListener("mouseup",e=>{
+  if(!mouseDown)return;
+  mouseDown=false;
+  endX=e.clientX;
+  if(startX-endX>50){ nextPage(); }
+  else if(endX-startX>50){ prevPage(); }
+});
+
+// ---------- 字体 ----------
+document.getElementById("increase").onclick=()=>{fontSize+=0.2; renderPage();}
+document.getElementById("decrease").onclick=()=>{fontSize=Math.max(0.8,fontSize-0.2); renderPage();}
+
+// ---------- 朗读 ----------
+let synth = window.speechSynthesis;
+let utterance;
+function speakLine(){
+  if(!reading || lineIndex>=pages[currentPage].lines.length){stopReading();return;}
+  const lineDiv = linesEl.children[lineIndex];
+  const spans = Array.from(lineDiv.querySelectorAll("span"));
+  utterance = new SpeechSynthesisUtterance(pages[currentPage].lines[lineIndex]);
+  utterance.lang="zh-CN"; utterance.rate=0.9; utterance.pitch=1;
+  utterance.onboundary = (event)=>{
+    if(event.charIndex!==undefined){
+      spans.forEach(s=>s.style.color="white");
+      let idx=Math.min(event.charIndex, spans.length-1);
+      spans[idx].style.color="red";
+    }
+  }
+  utterance.onend = ()=>{spans.forEach(s=>s.style.color="white"); lineIndex++; speakLine();}
+  synth.speak(utterance);
+}
+function stopReading(){
+  reading=false; synth.cancel();
+  document.getElementById("stopBtn").classList.remove("paused");
+  Array.from(document.querySelectorAll(".line span")).forEach(s=>s.style.color="white");
+}
+document.getElementById("playBtn").onclick=()=>{if(!reading){reading=true; lineIndex=0; speakLine();}};
+document.getElementById("stopBtn").onclick=()=>{if(reading){synth.cancel();reading=false;document.getElementById("stopBtn").classList.add("paused");}else{reading=true;speakLine();document.getElementById("stopBtn").classList.remove("paused");}}
+
+// ---------- 添加页面/书籍 ----------
+const formOverlay=document.getElementById("formOverlay");
+const input1=document.getElementById("formInput1");
+const input2=document.getElementById("formInput2");
+const input3=document.getElementById("formInput3");
+const textarea=document.getElementById("formTextarea");
+const submitBtn=document.getElementById("formSubmit");
+const cancelBtn=document.getElementById("formCancel");
+const formTitle=document.getElementById("formTitle");
+const bookList=document.getElementById("bookList");
+let currentForm="";
+function showForm(type){
+  currentForm=type;
+  formOverlay.style.display="flex";
+  textarea.style.display="none"; input1.style.display="none"; input2.style.display="none"; input3.style.display="none";
+  if(type==="page"){formTitle.textContent="添加页面";input1.style.display="block";input1.placeholder="页面标题";textarea.style.display="block";textarea.placeholder="页面内容，每行或用逗号分隔";}
+  else if(type==="book"){formTitle.textContent="添加书籍";input1.style.display="block";input1.placeholder="书籍标题";input2.style.display="block";input2.placeholder="书籍链接";input3.style.display="block";input3.placeholder="封面URL";}
+  else if(type==="viewBook"){alert("书籍列表：\n"+books.map(b=>b.title).join("\n"));formOverlay.style.display="none";}
+}
+cancelBtn.onclick=()=>{formOverlay.style.display="none";}
+submitBtn.onclick=()=>{
+  if(currentForm==="page"){const title=input1.value.trim();const linesArr=textarea.value.split(/\n|,/).map(s=>s.trim()).filter(s=>s);if(title&&linesArr.length>0){pages.push({title,lines:linesArr,deletable:true});currentPage=pages.length-1;saveData();renderPage();alert("页面已添加！");}}
+  else if(currentForm==="book"){const title=input1.value.trim();const url=input2.value.trim();const img=input3.value.trim();if(title&&url&&img){books.push({title,url,img});saveData();renderBooks();alert("书籍已添加！");}}
+  formOverlay.style.display="none"; input1.value=""; input2.value=""; input3.value=""; textarea.value="";
+}
+function renderBooks(){bookList.innerHTML="";books.forEach(b=>{const img=document.createElement("img");img.src=b.img;img.title=b.title;img.className="bookIcon";img.onclick=()=>{window.open(b.url,"_blank");};bookList.appendChild(img);});}
+document.getElementById("addPage").onclick=()=>{showForm("page");}
+document.getElementById("addBook").onclick=()=>{showForm("book");}
+document.getElementById("viewBook").onclick=()=>{showForm("viewBook");}
+
+// ---------- 背景切换 ----------
+let bgIndex=0;
+const backgrounds=[
+  'https://media2.giphy.com/media/v1.Y2lkPTc5MGI3NjExYzdwYXd1dGcxbHloc3UwYjM3a2lpdnVhbHA5bnJrNWVpenc5dmltMiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/FUESbiqyQcJBcwFefb/giphy.gif',
+  'black', 'linear-gradient(to bottom,#001, #000)'
+];
+document.getElementById("changeBg").onclick=()=>{
+  bgIndex=(bgIndex+1)%backgrounds.length;
+  document.body.style.background=backgrounds[bgIndex];
+  if(bgIndex===1){initStars();}else{clearStars();}
+  if(bgIndex===2){initSnow();}else{clearSnow();}
+}
+
+// 星星
+const starCanvas=document.getElementById("stars");const starCtx=starCanvas.getContext("2d");let starsArray=[];
+function initStars(){starCanvas.width=window.innerWidth;starCanvas.height=window.innerHeight;starsArray=[];for(let i=0;i<150;i++){starsArray.push({x:Math.random()*starCanvas.width,y:Math.random()*starCanvas.height,r:Math.random()*2+1,opacity:Math.random()});}requestAnimationFrame(drawStars);}
+function drawStars(){starCtx.clearRect(0,0,starCanvas.width,starCanvas.height);starsArray.forEach(s=>{starCtx.beginPath();starCtx.arc(s.x,s.y,s.r,0,2*Math.PI);starCtx.fillStyle=`rgba(255,255,255,${s.opacity})`;starCtx.fill();s.opacity+=(Math.random()-0.5)*0.05;if(s.opacity>1)s.opacity=1;if(s.opacity<0)s.opacity=0;});if(bgIndex===1)requestAnimationFrame(drawStars);}
+function clearStars(){starCtx.clearRect(0,0,starCanvas.width,starCanvas.height);}
+
+// 雪
+const snowCanvas=document.getElementById("snow");const snowCtx=snowCanvas.getContext("2d");let snowArray=[];
+function initSnow(){snowCanvas.width=window.innerWidth;snowCanvas.height=window.innerHeight;snowArray=[];for(let i=0;i<200;i++){snowArray.push({x:Math.random()*snowCanvas.width,y:Math.random()*snowCanvas.height,r:Math.random()*3+1,speed:Math.random()*1+0.5});}requestAnimationFrame(drawSnow);}
+function drawSnow(){snowCtx.clearRect(0,0,snowCanvas.width,snowCanvas.height);snowArray.forEach(s=>{snowCtx.beginPath();snowCtx.arc(s.x,s.y,s.r,0,Math.PI*2);snowCtx.fillStyle="white";snowCtx.fill();s.y+=s.speed;if(s.y>snowCanvas.height)s.y=0;});if(bgIndex===2)requestAnimationFrame(drawSnow);}
+function clearSnow(){snowCtx.clearRect(0,0,snowCanvas.width,snowCanvas.height);}
+
+window.onresize=()=>{if(bgIndex===1)initStars();if(bgIndex===2)initSnow();}
+</script>
+<script>
+document.getElementById('logout-btn').onclick = function() {
+    window.location.href = "index.html";
+};
+</script>
+</body>
+</html>
+
