@@ -17,7 +17,6 @@
       overflow:hidden;
     }
 
-    /* Hacker Matrix Background */
     canvas#matrix {
       position:fixed;
       top:0;left:0;
@@ -26,27 +25,23 @@
     }
 
     .container {
-      background:rgba(0,0,0,0.8);
-      padding:40px;
+      background:rgba(0,0,0,0.85);
+      padding:30px;
       border-radius:12px;
       box-shadow:0 0 20px rgba(0,255,100,0.5);
       text-align:center;
-      width:350px;
+      width:280px;
     }
 
-    .logo {
-      margin-bottom:20px;
-    }
-    .logo img {
-      width:80px;
-    }
+    .logo {margin-bottom:15px;}
+    .logo img {width:70px;}
 
-    h2 {margin-bottom:20px;color:#0f0;}
+    h2 {margin-bottom:15px;color:#0f0;}
 
     input, select {
       width:100%;
-      padding:12px;
-      margin:10px 0;
+      padding:10px;
+      margin:8px 0;
       border:none;
       border-radius:6px;
       outline:none;
@@ -57,9 +52,9 @@
 
     .btn {
       width:100%;
-      padding:12px;
-      margin:10px 0;
-      font-size:16px;
+      padding:10px;
+      margin:8px 0;
+      font-size:14px;
       border:none;
       border-radius:6px;
       cursor:pointer;
@@ -74,11 +69,7 @@
       box-shadow:0 0 10px white;
       transition:0.3s;
     }
-    .btn-login:hover {
-      background:white;
-      color:black;
-      box-shadow:0 0 20px white;
-    }
+    .btn-login:hover {background:white;color:black;box-shadow:0 0 20px white;}
 
     .btn-create {
       background:#111;
@@ -87,11 +78,9 @@
       box-shadow:0 0 10px red;
       transition:0.3s;
     }
-    .btn-create:hover {
-      background:red;
-      color:white;
-      box-shadow:0 0 20px red;
-    }
+    .btn-create:hover {background:red;color:white;box-shadow:0 0 20px red;}
+
+    #createForm {display:none;margin-top:20px;}
   </style>
 </head>
 <body>
@@ -99,8 +88,7 @@
 
   <div class="container">
     <div class="logo">
-      <!-- Your logo here -->
-      <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/HackerRank_Icon-1000px.png/600px-HackerRank_Icon-1000px.png" alt="Logo">
+      <img src="https://i.postimg.cc/DwzYYTWD/logo.webp" alt="Logo">
     </div>
 
     <h2>Login</h2>
@@ -108,19 +96,23 @@
     <input type="password" id="loginPassword" placeholder="Password">
     <button class="btn btn-login" onclick="login()">Login</button>
 
-    <h2>Create Account</h2>
-    <input type="text" id="signupName" placeholder="Full Name">
-    <input type="email" id="signupEmail" placeholder="Email">
-    <input type="password" id="signupPassword" placeholder="Password">
-    <input type="number" id="signupAge" placeholder="Age">
-    <select id="signupGender">
-      <option value="" disabled selected>Select Gender</option>
-      <option value="male">Male</option>
-      <option value="female">Female</option>
-      <option value="other">Other</option>
-    </select>
-    <input type="tel" id="signupPhone" placeholder="Phone Number">
-    <button class="btn btn-create" onclick="confirmSignup()">Create Account</button>
+    <button class="btn btn-create" onclick="toggleCreate()">Create Account</button>
+
+    <div id="createForm">
+      <h2>Create Account</h2>
+      <input type="text" id="signupName" placeholder="Full Name">
+      <input type="email" id="signupEmail" placeholder="Email">
+      <input type="password" id="signupPassword" placeholder="Password">
+      <input type="number" id="signupAge" placeholder="Age">
+      <select id="signupGender">
+        <option value="" disabled selected>Select Gender</option>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+        <option value="other">Other</option>
+      </select>
+      <input type="tel" id="signupPhone" placeholder="Phone Number">
+      <button class="btn btn-create" onclick="confirmSignup()">Confirm</button>
+    </div>
   </div>
 
   <!-- Firebase SDK -->
@@ -129,20 +121,27 @@
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
   <script>
-    // 🔥 Replace with your Firebase config
-        const firebaseConfig = {
-    apiKey: "AIzaSyBCIVYd8e5vBeGRz-H12Nj9hd5dyqnZCDI",
-    authDomain: "guardiangate-7xkgi.firebaseapp.com",
-    projectId: "guardiangate-7xkgi",
-    storageBucket: "guardiangate-7xkgi.firebasestorage.app",
-    messagingSenderId: "133766737758",
-    appId: "1:133766737758:web:38de135254fef4664769cf"
+    // ✅ Your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyBCIVYd8e5vBeGRz-H12Nj9hd5dyqnZCDI",
+      authDomain: "guardiangate-7xkgi.firebaseapp.com",
+      projectId: "guardiangate-7xkgi",
+      storageBucket: "guardiangate-7xkgi.firebasestorage.app",
+      messagingSenderId: "133766737758",
+      appId: "1:133766737758:web:38de135254fef4664769cf"
     };
 
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
 
+    // Toggle signup form
+    function toggleCreate() {
+      const form = document.getElementById("createForm");
+      form.style.display = form.style.display === "none" ? "block" : "none";
+    }
+
+    // Confirm before creating account
     function confirmSignup() {
       const name = document.getElementById("signupName").value;
       const email = document.getElementById("signupEmail").value;
@@ -156,7 +155,7 @@
         return;
       }
 
-      const confirmText = 
+      const confirmText =
         "Please confirm your details:\n\n" +
         "👤 Name: " + name + "\n" +
         "📧 Email: " + email + "\n" +
@@ -171,6 +170,7 @@
       }
     }
 
+    // Signup with Firebase
     async function signup(name, email, password, age, gender, phone) {
       try {
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
@@ -182,30 +182,30 @@
         });
 
         alert("✅ Account created successfully!");
-        window.location.href = "welcome.html";
+        window.location.href = "welcome.html"; // redirect
       } catch (error) {
         alert("❌ " + error.message);
       }
     }
 
+    // Login with Firebase
     async function login() {
       const email = document.getElementById("loginEmail").value;
       const password = document.getElementById("loginPassword").value;
       try {
         await auth.signInWithEmailAndPassword(email, password);
         alert("✅ Login successful!");
-         window.location.href = "index.html";
+        window.location.href = "index.html"; // redirect
       } catch (error) {
         alert("❌ " + error.message);
       }
     }
 
-    // Matrix hacker background animation
+    // Matrix hacker background
     const canvas = document.getElementById("matrix");
     const ctx = canvas.getContext("2d");
     canvas.height = window.innerHeight;
     canvas.width = window.innerWidth;
-
     const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*()*&^%";
     const fontSize = 14;
     const columns = canvas.width / fontSize;

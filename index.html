@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>首页 - 我的示例网站</title>
+    <title>首页 -我的示列网站</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         * {
@@ -304,18 +304,55 @@
                 font-size: 1.2rem;
             }
         }
+
+                .header {
+        margin-bottom: 20px;
+        text-align: center;
+        }
+
+        .header h1 {
+        font-family: 'Share Tech Mono', monospace;
+        color: rgb(255, 0, 81);
+        font-size: 32px;
+        text-shadow:
+            0 0 5px #0f0,
+            0 0 10px #0f0,
+            0 0 20px #0f0,
+            0 0 40px #00ff00,
+            0 0 80px #00ff00;
+        animation: flicker 1.5s infinite alternate;
+        }
+
+        /* flicker animation for neon effect */
+        @keyframes flicker {
+        0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {
+            text-shadow:
+            0 0 5px rgb(255, 225, 0),
+            0 0 10px rgb(2, 31, 7),
+            0 0 20px rgb(9, 23, 9),
+            0 0 40px #8c00ff,
+            0 0 80px #0055ff;
+        }
+        20%, 22%, 24%, 55% {
+            text-shadow: 0 0 2px rgb(255, 0, 51); /* dim flicker effect */
+        }
+        }
+
     </style>
 </head>
 <body>
     <header>
         <div class="header-container">
-            <h1>我的示例网站</h1>
+            <div class="header">
+                <h1>黑科技网站</h1>
+            </div>
             <nav>
                 <a href="index.html">首页</a>
                 <a href="video.html">视频社区</a>
                 <a href="books.html">我的书籍</a>
                 <a href="contact.html">联系我们</a>
                 <a href="about.html">关于</a>
+                <a href="login.html">退出登录</a>
             </nav>
         </div>
     </header>
@@ -402,7 +439,7 @@
 
     <footer>
         <div class="footer-content">
-            <p>&copy; 2025 我的示例网站。保留所有权利。</p>
+            <p>2025 最新黑客网站。保留所有权利。</p>
             <div class="social-icons">
                 <a href="#"><i class="fab fa-weibo"></i></a>
                 <a href="#"><i class="fab fa-weixin"></i></a>
@@ -410,7 +447,7 @@
                 <a href="#"><i class="fab fa-github"></i></a>
                 <a href="#"><i class="fab fa-linkedin"></i></a>
             </div>
-            <p>地址：北京市海淀区示例街道123号 | 电话：010-12345678 | 邮箱：contact@example.com</p>
+            <p>@copy;地址：北京市海淀区示例街道123号 | 电话：1810-8866688 | 邮箱：awvtsaab150r@gmail.com</p>
         </div>
     </footer>
 </body>
